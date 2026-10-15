@@ -1,0 +1,22 @@
+{
+    "identifier": "glitter-policy_engine",
+    "vendor": "Glitter.kr",
+    "author": "Glitter.kr",
+    "copyright": "Copyright (c) 2026 Glitter.kr",
+    "name": {
+        "ko": "Glitter 정책 엔진",
+        "en": "Glitter Policy Engine"
+    },
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": {
+        "ko": "업무 규칙을 결정적으로 평가하는 독립 정책 엔진",
+        "en": "Independent deterministic policy evaluation engine for business rules"
+    },
+    "g7_version": ">=7.1.0",
+    "dependencies": {
+        "modules": {},
+        "plugins": {}
+    },
+    "github_url": "https://github.com/glitter-node/glitter-policy_engine"
+}

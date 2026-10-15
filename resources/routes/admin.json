@@ -1,0 +1,40 @@
+{
+    "version": "1.0.0",
+    "routes": [
+        {
+            "path": "*/admin/policy-engine/policies",
+            "layout": "admin_policy_list",
+            "auth_required": true,
+            "permission": "glitter-policy_engine.policies.read",
+            "meta": {"title": "$t:glitter-policy_engine.admin.policies.title"}
+        },
+        {
+            "path": "*/admin/policy-engine/policies/create",
+            "layout": "admin_policy_editor",
+            "auth_required": true,
+            "permission": "glitter-policy_engine.policies.create",
+            "meta": {"title": "$t:glitter-policy_engine.admin.editor.create_title"}
+        },
+        {
+            "path": "*/admin/policy-engine/policies/:id",
+            "layout": "admin_policy_editor",
+            "auth_required": true,
+            "permission": "glitter-policy_engine.policies.read",
+            "meta": {"title": "$t:glitter-policy_engine.admin.editor.edit_title"}
+        },
+        {
+            "path": "*/admin/policy-engine/simulator",
+            "layout": "admin_evaluation_simulator",
+            "auth_required": true,
+            "permission": "glitter-policy_engine.evaluations.simulate",
+            "meta": {"title": "$t:glitter-policy_engine.admin.simulator.title"}
+        },
+        {
+            "path": "*/admin/policy-engine/evaluations",
+            "layout": "admin_evaluation_history",
+            "auth_required": true,
+            "permission": "glitter-policy_engine.evaluations.read",
+            "meta": {"title": "$t:glitter-policy_engine.admin.history.title"}
+        }
+    ]
+}

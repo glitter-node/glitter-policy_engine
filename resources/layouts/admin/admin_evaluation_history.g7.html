@@ -1,0 +1,31 @@
+<layout name="admin_evaluation_history" version="1.0.0" extends="_admin_base">
+  <meta title="$t:glitter-policy_engine.admin.history.title" description="$t:glitter-policy_engine.admin.history.description"/>
+  <data-source id="evaluations" type="api" endpoint="/api/modules/glitter-policy_engine/admin/evaluations" method="GET" :auto_fetch="true" :auth_required="true">
+    <params page="{{query.page}}" per_page="{{query.per_page}}" owner_extension="{{query.owner_extension}}" policy_key="{{query.policy_key}}" decision="{{query.decision}}"/>
+    <fallback><field name="data"><field name="data" :value="[]"/><field name="meta"><field name="current_page" :value="1"/><field name="last_page" :value="1"/><field name="total" :value="0"/></field></field></fallback>
+  </data-source>
+  <permissions><permission>glitter-policy_engine.evaluations.read</permission></permissions>
+  <slot name="content">
+    <div class="admin-page-content-fluid">
+      <page-header data-type="composite" title="$t:glitter-policy_engine.admin.history.title" description="$t:glitter-policy_engine.admin.history.description"/>
+      <div class="admin-card flex gap-3">
+        <input type="text" value="{{query.owner_extension ?? ''}}" placeholder="$t:glitter-policy_engine.admin.history.owner_placeholder" class="input flex-1"><on type="keypress" key="Enter"><navigate path="/admin/policy-engine/evaluations" :mergeQuery="true" :replace="true"><query owner_extension="{{$event.target.value}}" :page="1"/></navigate></on></input>
+        <input type="text" value="{{query.policy_key ?? ''}}" placeholder="$t:glitter-policy_engine.admin.history.key_placeholder" class="input flex-1"><on type="keypress" key="Enter"><navigate path="/admin/policy-engine/evaluations" :mergeQuery="true" :replace="true"><query policy_key="{{$event.target.value}}" :page="1"/></navigate></on></input>
+        <select value="{{query.decision ?? ''}}" class="select-composite w-44">
+          <options><option value="">$t:glitter-policy_engine.common.all</option><option value="allow">$t:glitter-policy_engine.decision.allow</option><option value="deny">$t:glitter-policy_engine.decision.deny</option><option value="indeterminate">$t:glitter-policy_engine.decision.indeterminate</option></options>
+          <on type="change"><navigate path="/admin/policy-engine/evaluations" :mergeQuery="true" :replace="true"><query decision="{{$event.target.value}}" :page="1"/></navigate></on>
+        </select>
+      </div>
+      <data-grid data-type="composite" data="{{evaluations?.data?.data ?? []}}" :pagination="true" :serverSidePagination="true" serverCurrentPage="{{evaluations?.data?.meta?.current_page ?? 1}}" serverTotalPages="{{evaluations?.data?.meta?.last_page ?? 1}}" :pageSize="20" idField="evaluation_id" selectionScope="free">
+        <column field="evaluated_at" header="$t:glitter-policy_engine.admin.history.columns.evaluated_at"><cell><span>{{row.evaluated_at ? (() => { try { const value = new Date(row.evaluated_at); if (Number.isNaN(value.getTime())) return $t('glitter-policy_engine.admin.history.datetime_invalid'); return value.toLocaleString($locale === 'ko' ? 'ko-KR' : 'en-US', {timeZone: current_user?.data?.timezone || _global.settings?.general?.timezone || undefined, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false}); } catch (error) { return $t('glitter-policy_engine.admin.history.datetime_invalid'); } })() : $t('glitter-policy_engine.admin.history.datetime_missing')}}</span></cell></column>
+        <column field="owner_extension" header="$t:glitter-policy_engine.admin.history.columns.owner_extension"/>
+        <column field="policy_key" header="$t:glitter-policy_engine.admin.history.columns.policy_key"/>
+        <column field="policy_version" header="$t:glitter-policy_engine.admin.history.columns.version"/>
+        <column field="decision" header="$t:glitter-policy_engine.admin.history.columns.decision"><cell><span>{{row.decision === 'allow' ? '$t:glitter-policy_engine.decision.allow' : (row.decision === 'deny' ? '$t:glitter-policy_engine.decision.deny' : '$t:glitter-policy_engine.decision.indeterminate')}}</span></cell></column>
+        <column field="reason_code" header="$t:glitter-policy_engine.admin.history.columns.reason"/>
+        <column field="duration_us" header="$t:glitter-policy_engine.admin.history.columns.duration"><cell><span>{{typeof row.duration_us === 'number' && Number.isFinite(row.duration_us) && row.duration_us >= 0 ? (row.duration_us / 1000).toFixed(3) + ' ms' : $t('glitter-policy_engine.admin.history.duration_invalid')}}</span></cell></column>
+        <on type="change" event="onPageChange"><navigate path="/admin/policy-engine/evaluations" :mergeQuery="true" :replace="true"><query page="{{$args[0]}}"/></navigate></on>
+      </data-grid>
+    </div>
+  </slot>
+</layout>
