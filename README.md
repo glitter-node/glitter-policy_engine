@@ -11,9 +11,6 @@ G7 접근 제어를 통과한 뒤 업무 규칙을 추가로 판정하는 용도
 - Vendor / Author: `Glitter.kr`
 - License: MIT
 
-변경 내역은 [CHANGELOG](CHANGELOG.md)에서 확인합니다. 버전 제목에는 날짜를 기록하지 않으며,
-릴리스 날짜는 Git Tag 또는 GitHub Release 메타데이터로 관리합니다.
-
 ## 요구 환경
 
 - GnuBoard7 7.1.0 이상 (`g7_version: >=7.1.0`)
