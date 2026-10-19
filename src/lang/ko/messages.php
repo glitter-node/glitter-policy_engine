@@ -1,0 +1,45 @@
+<?php
+
+return [
+    'policy' => [
+        'fetch_success' => '정책을 조회했습니다.',
+        'fetch_failed' => '정책을 조회하지 못했습니다.',
+        'create_success' => '정책을 생성했습니다.',
+        'create_failed' => '정책을 생성하지 못했습니다.',
+        'update_success' => '정책 정보를 수정했습니다.',
+        'update_failed' => '정책 정보를 수정하지 못했습니다.',
+        'publish_success' => '정책을 게시했습니다.',
+        'publish_failed' => '정책을 게시하지 못했습니다.',
+        'schema_not_ready' => '정책 저장소 스키마가 준비되지 않아 게시할 수 없습니다.',
+        'not_found' => '정책을 찾을 수 없습니다.',
+    ],
+    'diff' => [
+        'success' => '정책 정의 비교를 완료했습니다.',
+        'failed' => '정책 정의를 비교하지 못했습니다.',
+        'invalid_query_parameters' => '허용되지 않은 비교 요청 파라미터가 있습니다.',
+        'version_selector_mismatch' => 'Revision 선택과 버전 파라미터가 일치하지 않습니다.',
+        'revision_not_found' => '요청한 Revision을 찾을 수 없습니다.',
+        'draft_not_found' => '정책 초안을 찾을 수 없습니다.',
+        'published_revision_not_found' => '게시된 Revision을 찾을 수 없습니다.',
+        'invalid_selector' => '비교 대상이 올바르지 않습니다.',
+        'invalid_revision_version' => 'Revision 버전은 양의 정수여야 합니다.',
+        'definition_uncomparable' => '정책 정의를 비교할 수 없습니다.',
+        'result_too_large' => '비교 결과가 허용 크기를 초과합니다.',
+        'integrity_failed' => 'Revision 무결성 검증에 실패했습니다.',
+        'encoding_failed' => '비교 결과를 생성하지 못했습니다.',
+        'schema_not_ready' => '정책 저장소 스키마가 준비되지 않아 비교할 수 없습니다.',
+    ],
+    'draft' => [
+        'update_success' => '정책 초안을 저장했습니다.',
+        'update_failed' => '정책 초안을 저장하지 못했습니다.',
+        'conflict' => '다른 변경으로 초안 버전이 달라졌습니다. 새로고침 후 다시 시도하세요.',
+        'validation_complete' => '정책 초안 검증을 완료했습니다.',
+        'validation_failed' => '정책 초안을 검증하지 못했습니다.',
+        'invalid' => '정책 초안 구조가 올바르지 않습니다.',
+    ],
+    'evaluation' => [
+        'fetch_success' => '평가 이력을 조회했습니다.',
+        'complete' => '정책 평가를 완료했습니다.',
+        'failed' => '정책 평가를 완료하지 못했습니다.',
+    ],
+];

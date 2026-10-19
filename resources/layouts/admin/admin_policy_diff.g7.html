@@ -1,0 +1,164 @@
+<layout name="admin_policy_diff" version="1.0.0" extends="_admin_base">
+  <meta title="$t:glitter-policy_engine.admin.diff.title" description="$t:glitter-policy_engine.admin.diff.description"/>
+  <permissions><permission>glitter-policy_engine.policies.read</permission></permissions>
+  <init-local>
+    <field name="from" value="published"/><field name="to" value="draft"/>
+    <field name="fromVersion" value=""/><field name="toVersion" value=""/>
+    <field name="loading" :value="false"/><field name="result" :value="null"/>
+    <field name="errorStatus" :value="null"/><field name="errorCode" value=""/>
+  </init-local>
+  <slot name="content">
+    <div class="admin-page-content-responsive-fluid">
+      <page-header data-type="composite" title="$t:glitter-policy_engine.admin.diff.title" description="$t:glitter-policy_engine.admin.diff.description">
+        <button type="button" class="btn btn-secondary">
+          <on type="click"><navigate path="/admin/policy-engine/policies/{{route.id}}"/></on>
+          <span>$t:glitter-policy_engine.admin.diff.back_to_policy</span>
+        </button>
+      </page-header>
+
+      <div class="admin-card row-stack">
+        <div class="grid-2col-responsive">
+          <div>
+            <label class="form-label">$t:glitter-policy_engine.admin.diff.from</label>
+            <select value="{{_local.from}}" class="select-composite w-full">
+              <options>
+                <option value="published">$t:glitter-policy_engine.admin.diff.source_published</option>
+                <option value="revision">$t:glitter-policy_engine.admin.diff.source_revision</option>
+                <option value="draft">$t:glitter-policy_engine.admin.diff.source_draft</option>
+              </options>
+              <on type="change"><set-state target="local" from="{{$event.target.value}}" :result="null" errorStatus="null" errorCode=""/></on>
+            </select>
+            <div data-if="{{_local.from === 'revision'}}" class="mt-2">
+              <label class="form-label">$t:glitter-policy_engine.admin.diff.revision_version</label>
+              <input type="number" min="1" step="1" class="input w-full" value="{{_local.fromVersion}}">
+                <on type="change"><set-state target="local" fromVersion="{{$event.target.value}}" :result="null" errorStatus="null" errorCode=""/></on>
+              </input>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">$t:glitter-policy_engine.admin.diff.to</label>
+            <select value="{{_local.to}}" class="select-composite w-full">
+              <options>
+                <option value="published">$t:glitter-policy_engine.admin.diff.source_published</option>
+                <option value="revision">$t:glitter-policy_engine.admin.diff.source_revision</option>
+                <option value="draft">$t:glitter-policy_engine.admin.diff.source_draft</option>
+              </options>
+              <on type="change"><set-state target="local" to="{{$event.target.value}}" :result="null" errorStatus="null" errorCode=""/></on>
+            </select>
+            <div data-if="{{_local.to === 'revision'}}" class="mt-2">
+              <label class="form-label">$t:glitter-policy_engine.admin.diff.revision_version</label>
+              <input type="number" min="1" step="1" class="input w-full" value="{{_local.toVersion}}">
+                <on type="change"><set-state target="local" toVersion="{{$event.target.value}}" :result="null" errorStatus="null" errorCode=""/></on>
+              </input>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-primary" disabled="{{_local.loading || (_local.from === 'revision' &amp;&amp; (!Number.isInteger(Number(_local.fromVersion)) || Number(_local.fromVersion) &lt; 1)) || (_local.to === 'revision' &amp;&amp; (!Number.isInteger(Number(_local.toVersion)) || Number(_local.toVersion) &lt; 1))}}">
+            <on type="click">
+              <sequence if="{{!_local.loading}}">
+                <set-state target="local" :loading="true" :result="null" errorCode="" :errorStatus="null"/>
+                <api-call :auth_required="true" target="/api/modules/glitter-policy_engine/admin/policies/{{route.id}}/diff" method="GET">
+                  <body from="{{_local.from}}" to="{{_local.to}}" from_version="{{_local.from === 'revision' ? Number(_local.fromVersion) : undefined}}" to_version="{{_local.to === 'revision' ? Number(_local.toVersion) : undefined}}"/>
+                  <success><set-state target="local" result="{{response.data}}" :loading="false" errorCode="" :errorStatus="null"/></success>
+                  <fail><set-state target="local" :loading="false" errorCode="{{error?.errors?.code ?? 'request_failed'}}" errorStatus="{{error?.status ?? 0}}"/></fail>
+                </api-call>
+              </sequence>
+            </on>
+            <span>{{_local.loading ? '$t:glitter-policy_engine.admin.diff.loading' : '$t:glitter-policy_engine.admin.diff.compare'}}</span>
+          </button>
+        </div>
+      </div>
+
+      <div data-if="{{_local.loading}}" class="form-hint" role="status">$t:glitter-policy_engine.admin.diff.loading</div>
+      <div data-if="{{_local.errorStatus !== null}}" class="alert-danger mt-4" role="alert">
+        <span>{{_local.errorStatus === 401 ? '$t:glitter-policy_engine.admin.diff.unauthenticated' : (_local.errorStatus === 403 ? '$t:glitter-policy_engine.admin.diff.forbidden' : (_local.errorCode === 'policy_not_found' ? '$t:glitter-policy_engine.admin.diff.policy_not_found' : (_local.errorCode === 'policy_diff_revision_not_found' ? '$t:glitter-policy_engine.admin.diff.revision_not_found' : (_local.errorCode === 'policy_diff_draft_not_found' ? '$t:glitter-policy_engine.admin.diff.draft_not_found' : (_local.errorCode === 'policy_diff_published_revision_not_found' ? '$t:glitter-policy_engine.admin.diff.published_revision_not_found' : (_local.errorCode === 'revision_integrity_failed' ? '$t:glitter-policy_engine.admin.diff.integrity_failed' : (_local.errorCode === 'policy_schema_not_ready' ? '$t:glitter-policy_engine.admin.diff.schema_not_ready' : (_local.errorCode === 'policy_diff_definition_uncomparable' ? '$t:glitter-policy_engine.admin.diff.definition_uncomparable' : (_local.errorCode === 'policy_definition_diff_result_too_large' ? '$t:glitter-policy_engine.admin.diff.result_too_large' : (_local.errorCode === 'policy_definition_diff_encoding_failed' ? '$t:glitter-policy_engine.admin.diff.encoding_failed' : (_local.errorCode === 'policy_diff_invalid_selector' ? '$t:glitter-policy_engine.admin.diff.invalid_selector' : (_local.errorCode === 'policy_diff_invalid_revision_version' ? '$t:glitter-policy_engine.admin.diff.invalid_revision_version' : (_local.errorStatus === 422 ? '$t:glitter-policy_engine.admin.diff.validation_failed' : (_local.errorStatus === 0 ? '$t:glitter-policy_engine.admin.diff.network_failed' : '$t:glitter-policy_engine.admin.diff.failed'))))))))))))))}}</span>
+      </div>
+
+      <div data-if="{{_local.result &amp;&amp; !_local.result.changed}}" class="admin-card mt-4" role="status">
+        <span>$t:glitter-policy_engine.admin.diff.no_changes</span>
+      </div>
+      <div data-if="{{_local.result?.comparison_complete === false}}" class="alert-warning mt-4" role="status">
+        <strong>$t:glitter-policy_engine.admin.diff.incomplete</strong>
+        <div data-if="{{(_local.result?.limitations ?? []).includes('rules_compared_by_position')}}">$t:glitter-policy_engine.admin.diff.limitation_position</div>
+        <div data-if="{{(_local.result?.limitations ?? []).includes('rule_order_not_identified')}}">$t:glitter-policy_engine.admin.diff.limitation_order</div>
+        <div data-if="{{(_local.result?.limitations ?? []).includes('fields_compared_as_value')}}">$t:glitter-policy_engine.admin.diff.limitation_fields</div>
+        <div data-if="{{(_local.result?.limitations ?? []).includes('rules_compared_as_value')}}">$t:glitter-policy_engine.admin.diff.limitation_rules</div>
+      </div>
+
+      <div data-if="{{_local.result}}" class="admin-card row-stack mt-4">
+        <h2 class="section-heading">$t:glitter-policy_engine.admin.diff.result_title</h2>
+        <div class="grid-2col-responsive">
+          <div>
+            <h3 class="form-label">$t:glitter-policy_engine.admin.diff.from</h3>
+            <div>{{_local.result.from?.source?.type === 'revision' ? '$t:glitter-policy_engine.admin.diff.source_revision' : (_local.result.from?.source?.type === 'published' ? '$t:glitter-policy_engine.admin.diff.source_published' : '$t:glitter-policy_engine.admin.diff.source_draft')}}</div>
+            <div data-if="{{_local.result.from?.source?.version !== undefined}}">$t:glitter-policy_engine.admin.diff.version_value|version={{_local.result.from.source.version}}</div>
+            <div data-if="{{_local.result.from?.source?.lock_version !== undefined}}">$t:glitter-policy_engine.admin.diff.lock_version_value|version={{_local.result.from.source.lock_version}}</div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.validation_label</strong><span>{{_local.result.from?.validation?.status === 'valid' ? '$t:glitter-policy_engine.admin.diff.valid' : (_local.result.from?.validation?.status === 'invalid' ? '$t:glitter-policy_engine.admin.diff.invalid' : '$t:glitter-policy_engine.admin.diff.validation_unknown')}}</span></div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.integrity_label</strong><span>{{_local.result.from?.integrity?.status === 'verified' ? '$t:glitter-policy_engine.admin.diff.integrity_verified' : (_local.result.from?.integrity?.status === 'not_applicable' ? '$t:glitter-policy_engine.admin.diff.integrity_not_applicable' : '$t:glitter-policy_engine.admin.diff.integrity_unknown')}}</span></div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.safety_label</strong><span>{{_local.result.from?.safety?.status === 'safe' ? '$t:glitter-policy_engine.admin.diff.safety_safe' : (_local.result.from?.safety?.status === 'unsafe' ? '$t:glitter-policy_engine.admin.diff.safety_unsafe' : '$t:glitter-policy_engine.admin.diff.safety_unknown')}}</span></div>
+            <div data-if="{{_local.result.from?.safety?.status === 'unsafe'}}" class="alert-warning mt-2" role="status">
+              <div>$t:glitter-policy_engine.admin.diff.safety_unsafe_reason</div>
+              <div data-if="{{_local.result.from?.safety?.reason_codes?.includes('unsafe_empty_membership_condition')}}">$t:glitter-policy_engine.admin.diff.safety_empty_membership</div>
+              <div data-if="{{_local.result.from?.safety?.reason_codes?.includes('ambiguous_empty_array_comparison')}}">$t:glitter-policy_engine.admin.diff.safety_ambiguous_empty_array</div>
+              <div data-if="{{_local.result.from?.safety?.reason_codes?.includes('unverified_array_comparison_shape')}}">$t:glitter-policy_engine.admin.diff.safety_unverified_array_shape</div>
+              <div data-if="{{Number.isInteger(_local.result.from?.safety?.condition_count) &amp;&amp; _local.result.from.safety.condition_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_condition_count|count={{_local.result.from.safety.condition_count}}</div>
+              <div data-if="{{Number.isInteger(_local.result.from?.safety?.ambiguous_condition_count) &amp;&amp; _local.result.from.safety.ambiguous_condition_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_ambiguous_count|count={{_local.result.from.safety.ambiguous_condition_count}}</div>
+              <div data-if="{{Number.isInteger(_local.result.from?.safety?.unverified_array_comparison_count) &amp;&amp; _local.result.from.safety.unverified_array_comparison_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_unverified_count|count={{_local.result.from.safety.unverified_array_comparison_count}}</div>
+              <div data-if="{{_local.result.from?.source?.type === 'published' || _local.result.from?.source?.type === 'revision'}}">$t:glitter-policy_engine.admin.diff.safety_legacy_shape_limit</div>
+            </div>
+            <div data-if="{{_local.result.from?.safety?.status === 'unknown'}}" class="alert-warning mt-2" role="status">$t:glitter-policy_engine.admin.diff.safety_unknown_detail</div>
+            <div data-if="{{_local.result.from?.source?.type === 'draft'}}"><strong>$t:glitter-policy_engine.admin.diff.publishability_label</strong><span>{{_local.result.from?.publishability?.status === 'publishable' ? '$t:glitter-policy_engine.admin.diff.publishable' : (_local.result.from?.publishability?.status === 'not_publishable' ? '$t:glitter-policy_engine.admin.diff.not_publishable' : '$t:glitter-policy_engine.admin.diff.publishability_unknown')}}</span></div>
+            <div data-if="{{_local.result.from?.source?.type === 'draft'}}" class="form-hint">$t:glitter-policy_engine.admin.diff.publishability_note</div>
+          </div>
+          <div>
+            <h3 class="form-label">$t:glitter-policy_engine.admin.diff.to</h3>
+            <div>{{_local.result.to?.source?.type === 'revision' ? '$t:glitter-policy_engine.admin.diff.source_revision' : (_local.result.to?.source?.type === 'published' ? '$t:glitter-policy_engine.admin.diff.source_published' : '$t:glitter-policy_engine.admin.diff.source_draft')}}</div>
+            <div data-if="{{_local.result.to?.source?.version !== undefined}}">$t:glitter-policy_engine.admin.diff.version_value|version={{_local.result.to.source.version}}</div>
+            <div data-if="{{_local.result.to?.source?.lock_version !== undefined}}">$t:glitter-policy_engine.admin.diff.lock_version_value|version={{_local.result.to.source.lock_version}}</div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.validation_label</strong><span>{{_local.result.to?.validation?.status === 'valid' ? '$t:glitter-policy_engine.admin.diff.valid' : (_local.result.to?.validation?.status === 'invalid' ? '$t:glitter-policy_engine.admin.diff.invalid' : '$t:glitter-policy_engine.admin.diff.validation_unknown')}}</span></div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.integrity_label</strong><span>{{_local.result.to?.integrity?.status === 'verified' ? '$t:glitter-policy_engine.admin.diff.integrity_verified' : (_local.result.to?.integrity?.status === 'not_applicable' ? '$t:glitter-policy_engine.admin.diff.integrity_not_applicable' : '$t:glitter-policy_engine.admin.diff.integrity_unknown')}}</span></div>
+            <div><strong>$t:glitter-policy_engine.admin.diff.safety_label</strong><span>{{_local.result.to?.safety?.status === 'safe' ? '$t:glitter-policy_engine.admin.diff.safety_safe' : (_local.result.to?.safety?.status === 'unsafe' ? '$t:glitter-policy_engine.admin.diff.safety_unsafe' : '$t:glitter-policy_engine.admin.diff.safety_unknown')}}</span></div>
+            <div data-if="{{_local.result.to?.safety?.status === 'unsafe'}}" class="alert-warning mt-2" role="status">
+              <div>$t:glitter-policy_engine.admin.diff.safety_unsafe_reason</div>
+              <div data-if="{{_local.result.to?.safety?.reason_codes?.includes('unsafe_empty_membership_condition')}}">$t:glitter-policy_engine.admin.diff.safety_empty_membership</div>
+              <div data-if="{{_local.result.to?.safety?.reason_codes?.includes('ambiguous_empty_array_comparison')}}">$t:glitter-policy_engine.admin.diff.safety_ambiguous_empty_array</div>
+              <div data-if="{{_local.result.to?.safety?.reason_codes?.includes('unverified_array_comparison_shape')}}">$t:glitter-policy_engine.admin.diff.safety_unverified_array_shape</div>
+              <div data-if="{{Number.isInteger(_local.result.to?.safety?.condition_count) &amp;&amp; _local.result.to.safety.condition_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_condition_count|count={{_local.result.to.safety.condition_count}}</div>
+              <div data-if="{{Number.isInteger(_local.result.to?.safety?.ambiguous_condition_count) &amp;&amp; _local.result.to.safety.ambiguous_condition_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_ambiguous_count|count={{_local.result.to.safety.ambiguous_condition_count}}</div>
+              <div data-if="{{Number.isInteger(_local.result.to?.safety?.unverified_array_comparison_count) &amp;&amp; _local.result.to.safety.unverified_array_comparison_count &gt; 0}}">$t:glitter-policy_engine.admin.diff.safety_unverified_count|count={{_local.result.to.safety.unverified_array_comparison_count}}</div>
+              <div data-if="{{_local.result.to?.source?.type === 'published' || _local.result.to?.source?.type === 'revision'}}">$t:glitter-policy_engine.admin.diff.safety_legacy_shape_limit</div>
+            </div>
+            <div data-if="{{_local.result.to?.safety?.status === 'unknown'}}" class="alert-warning mt-2" role="status">$t:glitter-policy_engine.admin.diff.safety_unknown_detail</div>
+            <div data-if="{{_local.result.to?.source?.type === 'draft'}}"><strong>$t:glitter-policy_engine.admin.diff.publishability_label</strong><span>{{_local.result.to?.publishability?.status === 'publishable' ? '$t:glitter-policy_engine.admin.diff.publishable' : (_local.result.to?.publishability?.status === 'not_publishable' ? '$t:glitter-policy_engine.admin.diff.not_publishable' : '$t:glitter-policy_engine.admin.diff.publishability_unknown')}}</span></div>
+            <div data-if="{{_local.result.to?.source?.type === 'draft'}}" class="form-hint">$t:glitter-policy_engine.admin.diff.publishability_note</div>
+          </div>
+        </div>
+        <div data-if="{{_local.result.changed}}" class="alert-info">
+          <span>$t:glitter-policy_engine.admin.diff.change_count|count={{_local.result.summary?.total_changes ?? 0}}</span>
+        </div>
+        <div>
+          <h3 class="section-heading">$t:glitter-policy_engine.admin.diff.comparison_mode</h3>
+          <div class="grid-2col-responsive">
+            <div><span>$t:glitter-policy_engine.admin.diff.fields_mode</span><span> {{_local.result.comparison_mode?.fields === 'field_key' ? '$t:glitter-policy_engine.admin.diff.mode_field_key' : '$t:glitter-policy_engine.admin.diff.mode_whole_value'}}</span></div>
+            <div><span>$t:glitter-policy_engine.admin.diff.rules_mode</span><span> {{_local.result.comparison_mode?.rules === 'rule_id' ? '$t:glitter-policy_engine.admin.diff.mode_rule_id' : (_local.result.comparison_mode?.rules === 'position' ? '$t:glitter-policy_engine.admin.diff.mode_position' : '$t:glitter-policy_engine.admin.diff.mode_whole_value')}}</span></div>
+          </div>
+        </div>
+        <data-grid data-type="composite" data="{{_local.result?.changes ?? []}}" idField="path" :pagination="true" :pageSize="20" emptyMessage="$t:glitter-policy_engine.admin.diff.no_changes">
+          <column field="type" header="$t:glitter-policy_engine.admin.diff.change_type">
+            <cell><span>{{row.type === 'schema_version_changed' ? '$t:glitter-policy_engine.admin.diff.type_schema' : (row.type === 'definition_property_added' ? '$t:glitter-policy_engine.admin.diff.type_definition_property_added' : (row.type === 'definition_property_removed' ? '$t:glitter-policy_engine.admin.diff.type_definition_property_removed' : (row.type === 'definition_property_changed' ? '$t:glitter-policy_engine.admin.diff.type_definition_property_changed' : (row.type === 'field_added' ? '$t:glitter-policy_engine.admin.diff.type_field_added' : (row.type === 'field_removed' ? '$t:glitter-policy_engine.admin.diff.type_field_removed' : (row.type === 'field_definition_changed' ? '$t:glitter-policy_engine.admin.diff.type_field_changed' : (row.type === 'fields_structure_changed' ? '$t:glitter-policy_engine.admin.diff.type_fields_structure' : (row.type === 'rule_added' ? '$t:glitter-policy_engine.admin.diff.type_rule_added' : (row.type === 'rule_removed' ? '$t:glitter-policy_engine.admin.diff.type_rule_removed' : (row.type === 'rule_effect_changed' ? '$t:glitter-policy_engine.admin.diff.type_rule_effect' : (row.type === 'rule_condition_changed' ? '$t:glitter-policy_engine.admin.diff.type_rule_condition' : (row.type === 'rules_reordered' ? '$t:glitter-policy_engine.admin.diff.type_rules_reordered' : (row.type === 'rule_id_changed' ? '$t:glitter-policy_engine.admin.diff.type_rule_id' : (row.type === 'rules_structure_changed' ? '$t:glitter-policy_engine.admin.diff.type_rules_structure' : (row.type === 'rule_property_added' ? '$t:glitter-policy_engine.admin.diff.type_rule_property_added' : (row.type === 'rule_property_removed' ? '$t:glitter-policy_engine.admin.diff.type_rule_property_removed' : (row.type === 'rule_property_changed' ? '$t:glitter-policy_engine.admin.diff.type_rule_property_changed' : '$t:glitter-policy_engine.admin.diff.type_rule_changed')))))))))))))))))}}</span></cell>
+          </column>
+          <column field="path" header="$t:glitter-policy_engine.admin.diff.path">
+            <cell><span class="font-mono whitespace-pre-wrap">{{row.path ?? ''}}</span><span data-if="{{row.rule_id !== undefined}}"> · {{row.rule_id}}</span></cell>
+          </column>
+          <column field="before" header="$t:glitter-policy_engine.admin.diff.before">
+            <cell><pre class="font-mono whitespace-pre-wrap">{{row.before === undefined ? '$t:glitter-policy_engine.admin.diff.not_present' : JSON.stringify(row.before, null, 2)}}</pre></cell>
+          </column>
+          <column field="after" header="$t:glitter-policy_engine.admin.diff.after">
+            <cell><pre class="font-mono whitespace-pre-wrap">{{row.after === undefined ? '$t:glitter-policy_engine.admin.diff.not_present' : JSON.stringify(row.after, null, 2)}}</pre></cell>
+          </column>
+        </data-grid>
+      </div>
+    </div>
+  </slot>
+</layout>

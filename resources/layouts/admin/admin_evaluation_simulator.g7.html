@@ -1,0 +1,151 @@
+<layout name="admin_evaluation_simulator" version="1.0.0" extends="_admin_base">
+  <meta title="$t:glitter-policy_engine.admin.simulator.title" description="$t:glitter-policy_engine.admin.simulator.description"/>
+  <data-source id="policies" type="api" endpoint="/api/modules/glitter-policy_engine/admin/policies" method="GET" :auto_fetch="true" :auth_required="true">
+    <params page="{{query.policy_page ?? 1}}" :per_page="20" status="published" search="{{query.policy_search ?? ''}}"/>
+    <fallback>
+      <field name="data"><field name="data" :value="[]"/><field name="meta"><field name="current_page" :value="1"/><field name="last_page" :value="1"/><field name="total" :value="0"/></field></field>
+    </fallback>
+  </data-source>
+  <permissions>
+    <permission>glitter-policy_engine.evaluations.simulate</permission>
+    <permission>glitter-policy_engine.policies.read</permission>
+  </permissions>
+  <init-local>
+    <field name="selectedPolicyId" value=""/>
+    <field name="selectedPolicy" :value="null"/>
+    <field name="ownerExtension" value=""/>
+    <field name="policyKey" value=""/>
+    <field name="policyVersion" :value="null"/>
+    <field name="action" value=""/>
+    <field name="subjectText" value="{}"/>
+    <field name="resourceText" value="{}"/>
+    <field name="contextText" value="{}"/>
+    <field name="subjectStatus" value="valid"/>
+    <field name="resourceStatus" value="valid"/>
+    <field name="contextStatus" value="valid"/>
+    <field name="subjectError" value=""/>
+    <field name="resourceError" value=""/>
+    <field name="contextError" value=""/>
+    <field name="result" :value="null"/>
+    <field name="errors" :value="null"/>
+    <field name="isSubmitting" :value="false"/>
+  </init-local>
+  <slot name="content">
+    <div class="admin-page-content-responsive-fluid">
+      <page-header data-type="composite" title="$t:glitter-policy_engine.admin.simulator.title" description="$t:glitter-policy_engine.admin.simulator.description"/>
+
+      <div class="admin-card row-stack">
+        <div class="flex-center justify-between gap-3">
+          <div>
+            <h2 class="section-heading">$t:glitter-policy_engine.admin.simulator.policy_select</h2>
+            <p class="form-hint">$t:glitter-policy_engine.admin.simulator.policy_select_hint</p>
+          </div>
+          <button type="button" class="btn btn-secondary" aria-label="$t:glitter-policy_engine.admin.simulator.retry_policies">
+            <on type="click"><refetch-data-source dataSourceId="policies"/></on>
+            <span>$t:glitter-policy_engine.admin.simulator.retry_policies</span>
+          </button>
+        </div>
+        <div class="flex gap-3">
+          <input type="text" value="{{query.policy_search ?? ''}}" placeholder="$t:glitter-policy_engine.admin.simulator.policy_search" class="input flex-1">
+            <on type="keypress" key="Enter"><navigate path="/admin/policy-engine/simulator" :mergeQuery="true" :replace="true"><query policy_search="{{$event.target.value}}" :policy_page="1"/></navigate></on>
+          </input>
+        </div>
+        <div data-if="{{policies?.loading}}" class="form-hint">$t:glitter-policy_engine.admin.simulator.policies_loading</div>
+        <div data-if="{{policies?.error}}" class="alert-danger">
+          <span>$t:glitter-policy_engine.admin.simulator.policies_load_failed</span>
+        </div>
+        <div data-if="{{!policies?.loading &amp;&amp; !policies?.error &amp;&amp; (policies?.data?.data ?? []).filter(p => p.status === 'published' &amp;&amp; p.published_version !== null).length === 0}}" class="form-hint">$t:glitter-policy_engine.admin.simulator.no_published_policies</div>
+        <select data-if="{{(policies?.data?.data ?? []).filter(p => p.status === 'published' &amp;&amp; p.published_version !== null).length > 0}}" value="{{_local.selectedPolicyId ?? ''}}" class="select-composite w-full" options="{{[{value: '', label: '$t:glitter-policy_engine.admin.simulator.policy_select_placeholder'}, ...((policies?.data?.data ?? []).filter(p => p.status === 'published' &amp;&amp; p.published_version !== null).map(p => ({value: String(p.id), label: p.owner_extension + ' / ' + p.policy_key + ' (v' + p.published_version + ')'})))]}}">
+          <on type="change">
+            <set-state target="local" selectedPolicyId="$event.target.value" selectedPolicy="{{(policies?.data?.data ?? []).find(p => String(p.id) === String($event.target.value) &amp;&amp; p.status === 'published' &amp;&amp; p.published_version !== null) ?? null}}" ownerExtension="{{((policies?.data?.data ?? []).find(p => String(p.id) === String($event.target.value) &amp;&amp; p.status === 'published' &amp;&amp; p.published_version !== null))?.owner_extension ?? ''}}" policyKey="{{((policies?.data?.data ?? []).find(p => String(p.id) === String($event.target.value) &amp;&amp; p.status === 'published' &amp;&amp; p.published_version !== null))?.policy_key ?? ''}}" policyVersion="{{((policies?.data?.data ?? []).find(p => String(p.id) === String($event.target.value) &amp;&amp; p.status === 'published' &amp;&amp; p.published_version !== null))?.published_version ?? null}}" :result="null" :errors="null"/>
+          </on>
+        </select>
+        <div data-if="{{_local.selectedPolicy}}" class="grid-3col-responsive">
+          <div><span class="form-label">$t:glitter-policy_engine.admin.editor.owner_extension</span><input type="text" value="{{_local.ownerExtension ?? ''}}" disabled class="input w-full"/></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.editor.policy_key</span><input type="text" value="{{_local.policyKey ?? ''}}" disabled class="input w-full"/></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.policy_version</span><input type="text" value="{{_local.policyVersion ?? ''}}" disabled class="input w-full"/></div>
+        </div>
+      </div>
+
+      <div class="admin-card row-stack">
+        <div class="grid-2col-responsive">
+          <div><label class="form-label">$t:glitter-policy_engine.admin.simulator.action</label><input type="text" value="{{_local.action ?? ''}}" placeholder="$t:glitter-policy_engine.admin.simulator.action_placeholder" class="input w-full"><on type="change"><set-state target="local" action="{{$event.target.value}}" result="null" errors="null"/></on></input></div>
+          <div class="form-hint flex items-end">$t:glitter-policy_engine.admin.simulator.action_hint</div>
+        </div>
+        <div class="grid-2col-responsive">
+          <div>
+            <label class="form-label">$t:glitter-policy_engine.admin.simulator.subject</label>
+            <textarea class="input w-full font-mono" style="height:240px;min-height:180px;width:100%;box-sizing:border-box;resize:vertical;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;line-height:1.6;tab-size:2;white-space:pre;padding:12px" :rows="14" value="{{_local.subjectText ?? '{}'}}"><on type="change"><set-state target="local" subjectText="{{$event.target.value}}" subjectStatus="idle" subjectError="" result="null" errors="null"/></on></textarea>
+            <div class="flex gap-2 mt-2">
+              <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.subjectText ?? '').trim()}}" subjectStatus="empty" subjectError=""/><set-state target="local" if="{{((_local.subjectText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.subjectText.trim()); return true; } catch (error) { return false; } })())}}" subjectStatus="valid" subjectError=""/><set-state target="local" if="{{((_local.subjectText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.subjectText.trim()); return true; } catch (error) { return false; } })())}}" subjectStatus="invalid" subjectError="{{(() =&gt; { try { JSON.parse(_local.subjectText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_check</span></button>
+              <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.subjectText ?? '').trim()}}" subjectStatus="empty" subjectError=""/><set-state target="local" if="{{((_local.subjectText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.subjectText.trim()); return true; } catch (error) { return false; } })())}}" subjectText="{{JSON.stringify(JSON.parse(_local.subjectText.trim()), null, 2)}}" subjectStatus="valid" subjectError=""/><set-state target="local" if="{{((_local.subjectText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.subjectText.trim()); return true; } catch (error) { return false; } })())}}" subjectStatus="invalid" subjectError="{{(() =&gt; { try { JSON.parse(_local.subjectText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_format</span></button>
+            </div>
+            <div data-if="{{_local.subjectStatus === 'invalid'}}" class="form-hint text-danger">$t:glitter-policy_engine.admin.simulator.json_invalid|error={{_local.subjectError ?? ''}}</div>
+            <div data-if="{{_local.subjectStatus === 'empty'}}" class="form-hint text-warning">$t:glitter-policy_engine.admin.simulator.json_required</div>
+          </div>
+          <div>
+            <label class="form-label">$t:glitter-policy_engine.admin.simulator.resource</label>
+            <textarea class="input w-full font-mono" style="height:240px;min-height:180px;width:100%;box-sizing:border-box;resize:vertical;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;line-height:1.6;tab-size:2;white-space:pre;padding:12px" :rows="14" value="{{_local.resourceText ?? '{}'}}"><on type="change"><set-state target="local" resourceText="{{$event.target.value}}" resourceStatus="idle" resourceError="" result="null" errors="null"/></on></textarea>
+            <div class="flex gap-2 mt-2">
+              <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.resourceText ?? '').trim()}}" resourceStatus="empty" resourceError=""/><set-state target="local" if="{{((_local.resourceText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.resourceText.trim()); return true; } catch (error) { return false; } })())}}" resourceStatus="valid" resourceError=""/><set-state target="local" if="{{((_local.resourceText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.resourceText.trim()); return true; } catch (error) { return false; } })())}}" resourceStatus="invalid" resourceError="{{(() =&gt; { try { JSON.parse(_local.resourceText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_check</span></button>
+              <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.resourceText ?? '').trim()}}" resourceStatus="empty" resourceError=""/><set-state target="local" if="{{((_local.resourceText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.resourceText.trim()); return true; } catch (error) { return false; } })())}}" resourceText="{{JSON.stringify(JSON.parse(_local.resourceText.trim()), null, 2)}}" resourceStatus="valid" resourceError=""/><set-state target="local" if="{{((_local.resourceText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.resourceText.trim()); return true; } catch (error) { return false; } })())}}" resourceStatus="invalid" resourceError="{{(() =&gt; { try { JSON.parse(_local.resourceText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_format</span></button>
+            </div>
+            <div data-if="{{_local.resourceStatus === 'invalid'}}" class="form-hint text-danger">$t:glitter-policy_engine.admin.simulator.json_invalid|error={{_local.resourceError ?? ''}}</div>
+            <div data-if="{{_local.resourceStatus === 'empty'}}" class="form-hint text-warning">$t:glitter-policy_engine.admin.simulator.json_required</div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">$t:glitter-policy_engine.admin.simulator.context</label>
+          <textarea class="input w-full font-mono" style="height:240px;min-height:180px;width:100%;box-sizing:border-box;resize:vertical;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;line-height:1.6;tab-size:2;white-space:pre;padding:12px" :rows="14" value="{{_local.contextText ?? '{}'}}"><on type="change"><set-state target="local" contextText="{{$event.target.value}}" contextStatus="idle" contextError="" result="null" errors="null"/></on></textarea>
+          <div class="flex gap-2 mt-2">
+            <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.contextText ?? '').trim()}}" contextStatus="empty" contextError=""/><set-state target="local" if="{{((_local.contextText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.contextText.trim()); return true; } catch (error) { return false; } })())}}" contextStatus="valid" contextError=""/><set-state target="local" if="{{((_local.contextText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.contextText.trim()); return true; } catch (error) { return false; } })())}}" contextStatus="invalid" contextError="{{(() =&gt; { try { JSON.parse(_local.contextText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_check</span></button>
+            <button type="button" class="btn btn-secondary"><on type="click"><set-state target="local" if="{{!(_local.contextText ?? '').trim()}}" contextStatus="empty" contextError=""/><set-state target="local" if="{{((_local.contextText ?? '').trim() &amp;&amp; (() =&gt; { try { JSON.parse(_local.contextText.trim()); return true; } catch (error) { return false; } })())}}" contextText="{{JSON.stringify(JSON.parse(_local.contextText.trim()), null, 2)}}" contextStatus="valid" contextError=""/><set-state target="local" if="{{((_local.contextText ?? '').trim() &amp;&amp; !(() =&gt; { try { JSON.parse(_local.contextText.trim()); return true; } catch (error) { return false; } })())}}" contextStatus="invalid" contextError="{{(() =&gt; { try { JSON.parse(_local.contextText.trim()); return ''; } catch (error) { return error.message; } })()}}"/></on><span>$t:glitter-policy_engine.admin.simulator.json_format</span></button>
+          </div>
+          <div data-if="{{_local.contextStatus === 'invalid'}}" class="form-hint text-danger">$t:glitter-policy_engine.admin.simulator.json_invalid|error={{_local.contextError ?? ''}}</div>
+          <div data-if="{{_local.contextStatus === 'empty'}}" class="form-hint text-warning">$t:glitter-policy_engine.admin.simulator.json_required</div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary" disabled="{{!_local.selectedPolicy || _local.isSubmitting || _local.subjectStatus !== 'valid' || _local.resourceStatus !== 'valid' || _local.contextStatus !== 'valid'}}">
+        <on type="click">
+          <sequence if="{{!_local.isSubmitting &amp;&amp; !!_local.selectedPolicy}}">
+            <set-state target="local" :isSubmitting="true" :result="null" :errors="null"/>
+            <api-call :auth_required="true" target="/api/modules/glitter-policy_engine/admin/evaluations/simulate" method="POST">
+              <body owner_extension="{{_local.ownerExtension}}" policy_key="{{_local.policyKey}}" action="{{_local.action}}" subject="{{JSON.parse(_local.subjectText || '{}')}}" resource="{{JSON.parse(_local.resourceText || '{}')}}" context="{{JSON.parse(_local.contextText || '{}')}}"/>
+              <success><set-state target="local" result="{{response.data}}" :errors="null" :isSubmitting="false"/></success>
+              <fail><set-state target="local" errors="{{error.errors ?? error.message}}" :result="null" :isSubmitting="false"/></fail>
+            </api-call>
+          </sequence>
+        </on>
+        <span>{{_local.isSubmitting ? '$t:glitter-policy_engine.admin.simulator.evaluating' : '$t:glitter-policy_engine.admin.simulator.run'}}</span>
+      </button>
+      <div data-if="{{!_local.selectedPolicy}}" class="form-hint text-warning">$t:glitter-policy_engine.admin.simulator.run_requires_policy</div>
+      <div data-if="{{_local.subjectStatus !== 'valid' || _local.resourceStatus !== 'valid' || _local.contextStatus !== 'valid'}}" class="form-hint text-warning">$t:glitter-policy_engine.admin.simulator.run_requires_valid_json</div>
+
+      <div data-if="{{_local.result}}" class="admin-card row-stack mt-4">
+        <h2 class="section-heading">$t:glitter-policy_engine.admin.simulator.result</h2>
+        <div data-if="{{_local.result.decision === 'allow'}}" class="alert-success" role="status"><span aria-hidden="true">✓</span><span>$t:glitter-policy_engine.admin.simulator.allow_result</span></div>
+        <div data-if="{{_local.result.decision === 'deny'}}" class="alert-danger" role="status"><span aria-hidden="true">×</span><span>$t:glitter-policy_engine.admin.simulator.deny_result</span></div>
+        <div data-if="{{_local.result.decision === 'indeterminate'}}" class="alert-warning" role="status"><span aria-hidden="true">!</span><span>$t:glitter-policy_engine.admin.simulator.indeterminate_result</span></div>
+        <div class="grid-2col-responsive">
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.decision_label</span><span>{{_local.result.decision === 'allow' ? '$t:glitter-policy_engine.decision.allow' : (_local.result.decision === 'deny' ? '$t:glitter-policy_engine.decision.deny' : '$t:glitter-policy_engine.decision.indeterminate')}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.reason_label</span><span>{{_local.result.reason_code ?? ''}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.blocks_execution</span><span>{{_local.result.blocks_execution === true ? '$t:glitter-policy_engine.admin.simulator.yes' : '$t:glitter-policy_engine.admin.simulator.no'}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.policy_version</span><span>{{_local.result.policy_version ?? '$t:glitter-policy_engine.admin.simulator.not_available'}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.evaluation_id</span><span class="font-mono">{{_local.result.evaluation_id ?? ''}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.duration</span><span>{{typeof _local.result.metadata?.duration_us === 'number' &amp;&amp; Number.isFinite(_local.result.metadata.duration_us) &amp;&amp; _local.result.metadata.duration_us >= 0 ? (_local.result.metadata.duration_us / 1000).toFixed(3) + ' ms' : '$t:glitter-policy_engine.admin.history.duration_invalid'}}</span></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.history_recorded</span><span>{{_local.result.metadata?.history_recorded === true ? '$t:glitter-policy_engine.admin.simulator.yes' : '$t:glitter-policy_engine.admin.simulator.no'}}</span></div>
+        </div>
+        <div class="grid-2col-responsive">
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.matched_allow_rules</span><pre class="font-mono whitespace-pre-wrap">{{JSON.stringify(_local.result.metadata?.matched_allow_rules ?? [], null, 2)}}</pre></div>
+          <div><span class="form-label">$t:glitter-policy_engine.admin.simulator.matched_deny_rules</span><pre class="font-mono whitespace-pre-wrap">{{JSON.stringify(_local.result.metadata?.matched_deny_rules ?? [], null, 2)}}</pre></div>
+        </div>
+        <button data-if="{{_local.result.metadata?.history_recorded === true}}" type="button" class="btn btn-secondary">
+          <on type="click"><navigate path="/admin/policy-engine/evaluations" :mergeQuery="true"><query owner_extension="{{_local.ownerExtension}}" policy_key="{{_local.policyKey}}" :page="1"/></navigate></on>
+          <span>$t:glitter-policy_engine.admin.simulator.view_history</span>
+        </button>
+      </div>
+      <div data-if="{{_local.errors}}" class="alert-danger mt-4" role="alert"><span>{{typeof _local.errors === 'string' ? _local.errors : JSON.stringify(_local.errors)}}</span></div>
+    </div>
+  </slot>
+</layout>
