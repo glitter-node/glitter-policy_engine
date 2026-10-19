@@ -1,0 +1,45 @@
+<?php
+
+return [
+    'policy' => [
+        'fetch_success' => 'Policies retrieved.',
+        'fetch_failed' => 'Policies could not be retrieved.',
+        'create_success' => 'Policy created.',
+        'create_failed' => 'Policy could not be created.',
+        'update_success' => 'Policy metadata updated.',
+        'update_failed' => 'Policy metadata could not be updated.',
+        'publish_success' => 'Policy published.',
+        'publish_failed' => 'Policy could not be published.',
+        'schema_not_ready' => 'The policy storage schema is not ready, so publishing is unavailable.',
+        'not_found' => 'Policy not found.',
+    ],
+    'diff' => [
+        'success' => 'Policy definition comparison completed.',
+        'failed' => 'Policy definitions could not be compared.',
+        'invalid_query_parameters' => 'The comparison request contains unsupported parameters.',
+        'version_selector_mismatch' => 'The revision selector and version parameter do not match.',
+        'revision_not_found' => 'The requested revision was not found.',
+        'draft_not_found' => 'The policy draft was not found.',
+        'published_revision_not_found' => 'The published revision was not found.',
+        'invalid_selector' => 'A comparison source is invalid.',
+        'invalid_revision_version' => 'The revision version must be a positive integer.',
+        'definition_uncomparable' => 'The policy definition cannot be compared.',
+        'result_too_large' => 'The comparison result exceeds the supported size.',
+        'integrity_failed' => 'Revision integrity verification failed.',
+        'encoding_failed' => 'The comparison result could not be encoded.',
+        'schema_not_ready' => 'The policy storage schema is not ready, so comparison is unavailable.',
+    ],
+    'draft' => [
+        'update_success' => 'Policy draft saved.',
+        'update_failed' => 'Policy draft could not be saved.',
+        'conflict' => 'The draft changed elsewhere. Refresh and try again.',
+        'validation_complete' => 'Policy draft validation completed.',
+        'validation_failed' => 'Policy draft could not be validated.',
+        'invalid' => 'The policy draft structure is invalid.',
+    ],
+    'evaluation' => [
+        'fetch_success' => 'Evaluation history retrieved.',
+        'complete' => 'Policy evaluation completed.',
+        'failed' => 'Policy evaluation could not be completed.',
+    ],
+];

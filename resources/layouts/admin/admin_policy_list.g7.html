@@ -1,0 +1,48 @@
+<layout name="admin_policy_list" version="1.0.0" extends="_admin_base">
+  <meta title="$t:glitter-policy_engine.admin.policies.title" description="$t:glitter-policy_engine.admin.policies.description"/>
+  <data-source id="policies" type="api" endpoint="/api/modules/glitter-policy_engine/admin/policies" method="GET" :auto_fetch="true" :auth_required="true">
+    <params page="{{query.page}}" per_page="{{query.per_page}}" owner_extension="{{query.owner_extension}}" status="{{query.status}}" search="{{query.search}}"/>
+    <fallback>
+      <field name="data"><field name="data" :value="[]"/><field name="meta"><field name="current_page" :value="1"/><field name="last_page" :value="1"/><field name="total" :value="0"/></field></field>
+    </fallback>
+  </data-source>
+  <permissions><permission>glitter-policy_engine.policies.read</permission></permissions>
+  <slot name="content">
+    <div class="admin-page-content-fluid">
+      <page-header data-type="composite" title="$t:glitter-policy_engine.admin.policies.title" description="$t:glitter-policy_engine.admin.policies.description">
+        <button type="button" class="btn btn-primary" disabled="{{policies?.data?.abilities?.can_create !== true}}">
+          <on type="click"><navigate path="/admin/policy-engine/policies/create"/></on>
+          <icon name="plus" size="sm"/><span>$t:glitter-policy_engine.admin.policies.create</span>
+        </button>
+      </page-header>
+      <div class="admin-card flex gap-3">
+        <input type="text" value="{{query.search ?? ''}}" placeholder="$t:glitter-policy_engine.admin.policies.search_placeholder" class="input flex-1">
+          <on type="keypress" key="Enter"><navigate path="/admin/policy-engine/policies" :mergeQuery="true" :replace="true"><query search="{{$event.target.value}}" :page="1"/></navigate></on>
+        </input>
+        <select value="{{query.status ?? ''}}" class="select-composite w-40">
+          <options>
+            <option value="">$t:glitter-policy_engine.common.all</option>
+            <option value="draft">$t:glitter-policy_engine.status.draft</option>
+            <option value="published">$t:glitter-policy_engine.status.published</option>
+            <option value="disabled">$t:glitter-policy_engine.status.disabled</option>
+          </options>
+          <on type="change"><navigate path="/admin/policy-engine/policies" :mergeQuery="true" :replace="true"><query status="{{$event.target.value}}" :page="1"/></navigate></on>
+        </select>
+      </div>
+      <data-grid data-type="composite" :data-blur-until-loaded="true" data="{{policies?.data?.data ?? []}}" :pagination="true" :serverSidePagination="true" serverCurrentPage="{{policies?.data?.meta?.current_page ?? 1}}" serverTotalPages="{{policies?.data?.meta?.last_page ?? 1}}" :pageSize="20" idField="id" selectionScope="free">
+        <column field="owner_extension" header="$t:glitter-policy_engine.admin.policies.columns.owner_extension"/>
+        <column field="policy_key" header="$t:glitter-policy_engine.admin.policies.columns.policy_key">
+          <cell><button type="button" class="link"><on type="click"><navigate path="/admin/policy-engine/policies/{{row.id}}" :mergeQuery="true"><query/></navigate></on><span>{{row.policy_key ?? ''}}</span></button></cell>
+        </column>
+        <column field="status" header="$t:glitter-policy_engine.admin.policies.columns.status">
+          <cell><span>{{row.status === 'published' ? '$t:glitter-policy_engine.status.published' : (row.status === 'disabled' ? '$t:glitter-policy_engine.status.disabled' : '$t:glitter-policy_engine.status.draft')}}</span></cell>
+        </column>
+        <column field="published_version" header="$t:glitter-policy_engine.admin.policies.columns.version">
+          <cell><span>{{row.published_version !== null && row.published_version !== undefined ? '$t:glitter-policy_engine.admin.policies.version_value|version=' + row.published_version : '$t:glitter-policy_engine.admin.policies.not_published'}}</span></cell>
+        </column>
+        <column field="updated_at" header="$t:glitter-policy_engine.admin.policies.columns.updated_at"/>
+        <on type="change" event="onPageChange"><navigate path="/admin/policy-engine/policies" :mergeQuery="true" :replace="true"><query page="{{$args[0]}}"/></navigate></on>
+      </data-grid>
+    </div>
+  </slot>
+</layout>
